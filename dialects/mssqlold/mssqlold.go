@@ -1,10 +1,9 @@
-package mssql
+package mssqlold
 
 import (
 	"database/sql"
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,7 +12,7 @@ import (
 )
 
 func setIdentityInsert(scope *gorm.Scope) {
-	if scope.Dialect().GetName() == "mssql" {
+	if scope.Dialect().GetName() == "mssqlold" {
 		scope.NewDB().Exec(fmt.Sprintf("SET IDENTITY_INSERT %v ON", scope.TableName()))
 	}
 }
@@ -21,7 +20,7 @@ func setIdentityInsert(scope *gorm.Scope) {
 func init() {
 	// Identity insert not needed DB: 20161228
 	// gorm.DefaultCallback.Create().After("gorm:begin_transaction").Register("mssql:set_identity_insert", setIdentityInsert)
-	gorm.RegisterDialect("mssql", &mssql{})
+	gorm.RegisterDialect("mssqlold", &mssql{})
 }
 
 type mssql struct {
@@ -30,7 +29,7 @@ type mssql struct {
 }
 
 func (mssql) GetName() string {
-	return "mssql"
+	return "mssqlold"
 }
 
 func (s *mssql) SetDB(db *sql.DB) {
@@ -130,20 +129,6 @@ func (s mssql) CurrentDatabase() (name string) {
 }
 
 func (mssql) LimitAndOffsetSQL(limit, offset interface{}) (sql string) {
-	if offset != nil {
-		if parsedOffset, err := strconv.ParseInt(fmt.Sprint(offset), 0, 0); err == nil && parsedOffset > 0 {
-			sql += fmt.Sprintf(" OFFSET %d ROWS", parsedOffset)
-		}
-	}
-	if limit != nil {
-		if parsedLimit, err := strconv.ParseInt(fmt.Sprint(limit), 0, 0); err == nil && parsedLimit > 0 {
-			if sql == "" {
-				// add default zero offset
-				sql += " OFFSET 0 ROWS"
-			}
-			sql += fmt.Sprintf(" FETCH NEXT %d ROWS ONLY", parsedLimit)
-		}
-	}
 	return
 }
 

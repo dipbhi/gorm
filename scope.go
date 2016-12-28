@@ -752,6 +752,20 @@ func (scope *Scope) limitAndOffsetSQL() string {
 	return scope.Dialect().LimitAndOffsetSQL(scope.Search.limit, scope.Search.offset)
 }
 
+func (scope *Scope) msSqlOldLimitAndOffsetWrap() string {
+	offset := scope.Search.offset
+	limit := scope.Search.limit
+	parsedOffset, err1 := strconv.ParseInt(fmt.Sprint(offset), 0, 0)
+	parsedLimit, err2 := strconv.ParseInt(fmt.Sprint(limit), 0, 0)
+
+	if err1 == nil && err2 == nil && parsedOffset >= 0 && parsedLimit > 0 {
+		combinedConditional := scope.joinsSQL() + scope.whereSQL() + scope.groupSQL() + scope.havingSQL()
+		return fmt.Sprintf("SELECT * FROM (SELECT %v, ROW_NUMBER() OVER (%s) AS rownum FROM %v %v) AS XXX WHERE rownum BETWEEN %d AND %d", scope.selectSQL(), scope.orderSQL(), scope.QuotedTableName(), combinedConditional, parsedOffset+1, parsedLimit)
+	} else {
+		return fmt.Sprintf("SELECT %v FROM %v %v", scope.selectSQL(), scope.QuotedTableName(), scope.CombinedConditionSql())
+	}
+}
+
 func (scope *Scope) groupSQL() string {
 	if len(scope.Search.group) == 0 {
 		return ""
@@ -794,7 +808,12 @@ func (scope *Scope) prepareQuerySQL() {
 	if scope.Search.raw {
 		scope.Raw(strings.TrimSuffix(strings.TrimPrefix(scope.CombinedConditionSql(), " WHERE ("), ")"))
 	} else {
-		scope.Raw(fmt.Sprintf("SELECT %v FROM %v %v", scope.selectSQL(), scope.QuotedTableName(), scope.CombinedConditionSql()))
+		if scope.Dialect().GetName() == "mssqlold" {
+			// old mssql (<=2008) handles pagination differently DB: 20161228
+			scope.Raw(scope.msSqlOldLimitAndOffsetWrap())
+		} else {
+			scope.Raw(fmt.Sprintf("SELECT %v FROM %v %v", scope.selectSQL(), scope.QuotedTableName(), scope.CombinedConditionSql()))
+		}
 	}
 	return
 }
