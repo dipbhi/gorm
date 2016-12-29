@@ -760,7 +760,7 @@ func (scope *Scope) msSqlOldLimitAndOffsetWrap() string {
 
 	if err1 == nil && err2 == nil && parsedOffset >= 0 && parsedLimit > 0 {
 		combinedConditional := scope.joinsSQL() + scope.whereSQL() + scope.groupSQL() + scope.havingSQL()
-		return fmt.Sprintf("SELECT * FROM (SELECT %v, ROW_NUMBER() OVER (%s) AS rownum FROM %v %v) AS XXX WHERE rownum BETWEEN %d AND %d", scope.selectSQL(), scope.orderSQL(), scope.QuotedTableName(), combinedConditional, parsedOffset+1, parsedLimit)
+		return fmt.Sprintf("SELECT * FROM (SELECT %v, ROW_NUMBER() OVER (%s) AS rownum FROM %v %v) AS XXX WHERE rownum BETWEEN %d AND %d", scope.selectSQL(), scope.orderSQL(), scope.QuotedTableName(), combinedConditional, parsedOffset+1, parsedOffset+parsedLimit)
 	} else {
 		return fmt.Sprintf("SELECT %v FROM %v %v", scope.selectSQL(), scope.QuotedTableName(), scope.CombinedConditionSql())
 	}
