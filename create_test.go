@@ -9,7 +9,8 @@ import (
 
 func TestCreate(t *testing.T) {
 	float := 35.03554004971999
-	user := User{Name: "CreateUser", Age: 18, Birthday: time.Now(), UserNum: Num(111), PasswordHash: []byte{'f', 'a', 'k', '4'}, Latitude: float}
+	now := time.Now()
+	user := User{Name: "CreateUser", Age: 18, Birthday: &now, UserNum: Num(111), PasswordHash: []byte{'f', 'a', 'k', '4'}, Latitude: float}
 
 	if !DB.NewRecord(user) || !DB.NewRecord(&user) {
 		t.Error("User should be new record before create")
@@ -174,6 +175,6 @@ func TestOmitWithCreate(t *testing.T) {
 
 	if queryuser.BillingAddressID.Int64 != 0 || queryuser.ShippingAddressId == 0 ||
 		queryuser.CreditCard.ID != 0 || len(queryuser.Emails) != 0 {
-		t.Errorf("Should not create omited relationships")
+		t.Errorf("Should not create omitted relationships")
 	}
 }
